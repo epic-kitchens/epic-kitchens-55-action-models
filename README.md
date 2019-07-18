@@ -123,6 +123,13 @@ when using 10 crop evaluation.
 | `TSM_arch=resnet50_modality=Flow_segments=8.pth.tar`  | 58.08 | 27.49 | 19.14 | **52.68** | 20.83 | 14.27 |
 
 
+## Extracting features
+
+Both classes `TSN` and `TSM` include `features` and `logits` methods, mimicking the 
+[`pretrainedmodels`](https://github.com/Cadene/pretrained-models.pytorch) API. Simply
+create a model instance `model = TSN(...)` and call `model.features(input)` to 
+obtain base-model features.
+
 ## Utilities
 You can have a look inside the checkpoints using `python 
 tools/print_checkpoint_details.py <path-to-checkpoint>` to print checkpoint details 

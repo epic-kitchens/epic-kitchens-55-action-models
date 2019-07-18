@@ -20,8 +20,8 @@ class TemporalShift(nn.Module):
         self.fold_div = n_div
         self.inplace = inplace
         if inplace:
-            LOG.info('=> Using in-place shift...')
-        LOG.info('=> Using fold div: {}'.format(self.fold_div))
+            LOG.info("=> Using in-place shift...")
+        LOG.info("=> Using fold div: {}".format(self.fold_div))
 
     def forward(self, x):
         x = self.shift(x, self.n_segment, fold_div=self.fold_div, inplace=self.inplace)
@@ -39,8 +39,8 @@ class TemporalShift(nn.Module):
         else:
             out = torch.zeros_like(x)
             out[:, :-1, :fold] = x[:, 1:, :fold]  # shift left
-            out[:, 1:, fold: 2 * fold] = x[:, :-1, fold: 2 * fold]  # shift right
-            out[:, :, 2 * fold:] = x[:, :, 2 * fold:]  # not shift
+            out[:, 1:, fold : 2 * fold] = x[:, :-1, fold : 2 * fold]  # shift right
+            out[:, :, 2 * fold :] = x[:, :, 2 * fold :]  # not shift
 
         return out.view(nt, c, h, w)
 
@@ -57,8 +57,8 @@ class InplaceShift(torch.autograd.Function):
         buffer[:, :-1] = input.data[:, 1:, :fold]
         input.data[:, :, :fold] = buffer
         buffer.zero_()
-        buffer[:, 1:] = input.data[:, :-1, fold: 2 * fold]
-        input.data[:, :, fold: 2 * fold] = buffer
+        buffer[:, 1:] = input.data[:, :-1, fold : 2 * fold]
+        input.data[:, :, fold : 2 * fold] = buffer
         return input
 
     @staticmethod
@@ -70,8 +70,8 @@ class InplaceShift(torch.autograd.Function):
         buffer[:, 1:] = grad_output.data[:, :-1, :fold]
         grad_output.data[:, :, :fold] = buffer
         buffer.zero_()
-        buffer[:, :-1] = grad_output.data[:, 1:, fold: 2 * fold]
-        grad_output.data[:, :, fold: 2 * fold] = buffer
+        buffer[:, :-1] = grad_output.data[:, 1:, fold : 2 * fold]
+        grad_output.data[:, :, fold : 2 * fold] = buffer
         return grad_output, None
 
 
@@ -95,21 +95,25 @@ class TemporalPool(nn.Module):
         return x
 
 
-def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool=False):
+def make_temporal_shift(net, n_segment, n_div=8, place="blockres", temporal_pool=False):
     if temporal_pool:
         n_segment_list = [n_segment, n_segment // 2, n_segment // 2, n_segment // 2]
     else:
         n_segment_list = [n_segment] * 4
     assert n_segment_list[-1] > 0
-    LOG.info('=> n_segment per stage: {}'.format(n_segment_list))
+    LOG.info("=> n_segment per stage: {}".format(n_segment_list))
 
     import torchvision
-    if isinstance(net, (torchvision.models.ResNet,
-                        pretrainedmodels.models.torchvision_models.ResNet)):
-        if place == 'block':
+
+    if isinstance(
+        net,
+        (torchvision.models.ResNet, pretrainedmodels.models.torchvision_models.ResNet),
+    ):
+        if place == "block":
+
             def make_block_temporal(stage, this_segment):
                 blocks = list(stage.children())
-                LOG.info('=> Processing stage with {} blocks'.format(len(blocks)))
+                LOG.info("=> Processing stage with {} blocks".format(len(blocks)))
                 for i, b in enumerate(blocks):
                     blocks[i] = TemporalShift(b, n_segment=this_segment, n_div=n_div)
                 return nn.Sequential(*(blocks))
@@ -119,17 +123,21 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
             net.layer3 = make_block_temporal(net.layer3, n_segment_list[2])
             net.layer4 = make_block_temporal(net.layer4, n_segment_list[3])
 
-        elif 'blockres' in place:
+        elif "blockres" in place:
             n_round = 1
             if len(list(net.layer3.children())) >= 23:
-                LOG.info('=> Using n_round {} to insert temporal shift'.format(n_round))
+                LOG.info("=> Using n_round {} to insert temporal shift".format(n_round))
 
             def make_block_temporal(stage, this_segment):
                 blocks = list(stage.children())
-                LOG.info('=> Processing stage with {} blocks residual'.format(len(blocks)))
+                LOG.info(
+                    "=> Processing stage with {} blocks residual".format(len(blocks))
+                )
                 for i, b in enumerate(blocks):
                     if i % n_round == 0:
-                        blocks[i].conv1 = TemporalShift(b.conv1, n_segment=this_segment, n_div=n_div)
+                        blocks[i].conv1 = TemporalShift(
+                            b.conv1, n_segment=this_segment, n_div=n_div
+                        )
                 return nn.Sequential(*blocks)
 
             net.layer1 = make_block_temporal(net.layer1, n_segment_list[0])
@@ -142,19 +150,20 @@ def make_temporal_shift(net, n_segment, n_div=8, place='blockres', temporal_pool
 
 def make_temporal_pool(net, n_segment):
     import torchvision
+
     if isinstance(net, torchvision.models.ResNet):
-        LOG.info('=> Injecting nonlocal pooling')
+        LOG.info("=> Injecting nonlocal pooling")
         net.layer2 = TemporalPool(net.layer2, n_segment)
     else:
         raise NotImplementedError
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # test inplace shift v.s. vanilla shift
     tsm1 = TemporalShift(nn.Sequential(), n_segment=8, n_div=8, inplace=False)
     tsm2 = TemporalShift(nn.Sequential(), n_segment=8, n_div=8, inplace=True)
 
-    print('=> Testing CPU...')
+    print("=> Testing CPU...")
     # test forward
     with torch.no_grad():
         for i in range(10):
@@ -175,7 +184,7 @@ if __name__ == '__main__':
             grad2 = torch.autograd.grad((y2 ** 2).mean(), [x2])[0]
             assert torch.norm(grad1 - grad2).item() < 1e-5
 
-    print('=> Testing GPU...')
+    print("=> Testing GPU...")
     tsm1.cuda()
     tsm2.cuda()
     # test forward
@@ -197,8 +206,4 @@ if __name__ == '__main__':
             grad1 = torch.autograd.grad((y1 ** 2).mean(), [x1])[0]
             grad2 = torch.autograd.grad((y2 ** 2).mean(), [x2])[0]
             assert torch.norm(grad1 - grad2).item() < 1e-5
-    print('Test passed.')
-
-
-
-
+    print("Test passed.")

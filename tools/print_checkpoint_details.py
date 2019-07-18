@@ -2,12 +2,11 @@
 
 import argparse
 import numbers
+from pathlib import Path
+from typing import Any, Dict
 
 import numpy as np
-from typing import Dict, Any
-
 import torch
-from pathlib import Path
 
 parser = argparse.ArgumentParser(
     description="Print the contents of a checkpoint",
@@ -63,12 +62,16 @@ def print_checkpoint_details(checkpoint: Dict[str, Any]) -> None:
     print("===========================================================================")
     print()
 
-    if 'optimizer' in checkpoint:
+    if "optimizer" in checkpoint:
         print("Optimizer details")
-        print("===========================================================================")
+        print(
+            "==========================================================================="
+        )
         for name, val in checkpoint["optimizer"].items():
             print(f"{name}: ", get_info(val))
-        print("===========================================================================")
+        print(
+            "==========================================================================="
+        )
         print()
 
     print("State dict details")

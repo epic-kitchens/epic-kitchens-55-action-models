@@ -1,8 +1,8 @@
 # the relation consensus module by Bolei
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import numpy as np
 
 
 class RelationModule(torch.nn.Module):
