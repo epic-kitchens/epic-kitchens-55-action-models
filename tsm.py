@@ -42,9 +42,9 @@ class TSM(nn.Module):
         self.num_class = num_class
         self.is_multitask = isinstance(num_class, (list, tuple))
         if self.is_multitask:
-            assert (
-                len(self.num_class) == 2
-            ), "We only support 2 tasks in multi task " "problems"
+            assert len(self.num_class) == 2, (
+                "We only support 2 tasks in multi task " "problems"
+            )
         self.modality = modality
         self.num_segments = num_segments
         self.reshape = True
@@ -351,9 +351,9 @@ class TSM(nn.Module):
                     logits_noun = logits_noun.view(
                         (-1, self.num_segments) + logits_noun.size()[1:]
                     )
-                output_verb = self.consensus(logits_verb)
-                output_noun = self.consensus(logits_noun)
-                return output_verb.squeeze(1), output_noun.squeeze(1)
+            output_verb = self.consensus(logits_verb)
+            output_noun = self.consensus(logits_noun)
+            return output_verb.squeeze(1), output_noun.squeeze(1)
         else:
             logits = self.new_fc(features)
 
@@ -367,8 +367,8 @@ class TSM(nn.Module):
                     )
                 else:
                     logits = logits.view((-1, self.num_segments) + logits.size()[1:])
-                output = self.consensus(logits)
-                return output.squeeze(1)
+            output = self.consensus(logits)
+            return output.squeeze(1)
 
     def forward(
         self, input: torch.Tensor

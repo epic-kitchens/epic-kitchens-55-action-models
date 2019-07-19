@@ -212,23 +212,17 @@ def make_non_local(net, n_segment):
 
 
 if __name__ == "__main__":
-    from torch.autograd import Variable
     import torch
 
     sub_sample = True
     bn_layer = True
 
-    img = Variable(torch.zeros(2, 3, 20))
-    net = NONLocalBlock1D(3, sub_sample=sub_sample, bn_layer=bn_layer)
-    out = net(img)
-    print(out.size())
+    fns = [NONLocalBlock1D, NONLocalBlock2D, NONLocalBlock3D]
+    dims = [1, 2, 3]
+    for dim, fn in zip(dims, fns):
+        img = torch.zeros(*([2, 3] + [20] * dim))
+        print("img shape: {}".format(img.shape))
+        net = fn(3, sub_sample=sub_sample, bn_layer=bn_layer)
+        out = net(img)
+        print(out.size())
 
-    img = Variable(torch.zeros(2, 3, 20, 20))
-    net = NONLocalBlock2D(3, sub_sample=sub_sample, bn_layer=bn_layer)
-    out = net(img)
-    print(out.size())
-
-    img = Variable(torch.randn(2, 3, 10, 20, 20))
-    net = NONLocalBlock3D(3, sub_sample=sub_sample, bn_layer=bn_layer)
-    out = net(img)
-    print(out.size())

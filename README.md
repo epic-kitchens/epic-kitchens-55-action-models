@@ -6,19 +6,19 @@ This is a set of models trained for EPIC-Kitchens baselines. We support:
 - [TRN](https://github.com/metalbubble/TRN-pytorch)
 - [TSM](https://github.com/MIT-HAN-LAB/temporal-shift-module)
 
-Many thanks to the authors of these repositories. 
+Many thanks to the authors of these repositories.
 
 ## Set up
 
 We provide an `environment.yml` file to create a conda environment. Sadly not all of the
-set up can be encapsulated in this file, so you have to perform some steps yourself 
-(in the interest of eeking extra performance!) 
+set up can be encapsulated in this file, so you have to perform some steps yourself
+(in the interest of eeking extra performance!)
 
 ```bash
 $ conda env create -n epic-models -f environment.yml
 $ conda activate epic-models
 
-# The following steps are taken from 
+# The following steps are taken from
 # https://docs.fast.ai/performance.html#installation
 
 $ conda uninstall -y --force pillow pil jpeg libtiff
@@ -28,7 +28,7 @@ $ CFLAGS="${CFLAGS} -mavx2" pip install --upgrade --no-cache-dir --force-reinsta
 $ conda install -y jpeg libtiff
 ```
 
-NOTE: If the installation of `pillow-simd` fails, you can try installing GCC from 
+NOTE: If the installation of `pillow-simd` fails, you can try installing GCC from
 conda-forge and trying the install again:
 
 ```bash
@@ -52,7 +52,7 @@ You should see something like
 6.0.0.post1
 ```
 
-Pillow doesn't release with `post` suffixes, so if you have `post` in the version 
+Pillow doesn't release with `post` suffixes, so if you have `post` in the version
 name, it's likely you have `pillow-simd` installed.
 
 ## How to use the code
@@ -64,8 +64,8 @@ data, or read on below for how to load checkpointed models.
 
 Checkpoints are saved as dictionaries with the following information:
 
-- `model_type` (str): Variant. Either `'tsm'`, `'tsm-nl'`, `'tsn'`, `'trn'`, or 
-  `'mtrn'` 
+- `model_type` (str): Variant. Either `'tsm'`, `'tsm-nl'`, `'tsn'`, `'trn'`, or
+  `'mtrn'`
 - `epoch` (int): Last epoch completed in training
 - `segment_count` (int): Number of segments the network was trained with.
 - `modality` (str): Modality of the input. Either `'RGB'` or `'Flow'`
@@ -75,11 +75,11 @@ Checkpoints are saved as dictionaries with the following information:
 - `args` (namespace): All the arguments used in training the network.
 
 Some keys are only present depending on model type:
-- TSN: 
+- TSN:
     - `consensus_type` (str, TSN only): Consensus module variant for TSN. Either `'avg'` or
       `'max'`.
 - TSM:
-    - `shift_place` (str, TSM only): Identifier for where the shift module is located. 
+    - `shift_place` (str, TSM only): Identifier for where the shift module is located.
       Either `block` or `blockres`.
     - `shift_div` (int, TSM only): The reciprocal of the proportion of channels used that
       are shifted.
@@ -111,8 +111,8 @@ model.load_state_dict(ckpt['state_dict'])
 
 ## Checkpoints
 You can download checkpoints using the tool provided at `checkpoints/download.py`,
-simply call it with the model variant, modality, and architecture that you wish to 
-download, e.g. `python checkpoints/download.py mtrn --arch BNInception --modality 
+simply call it with the model variant, modality, and architecture that you wish to
+download, e.g. `python checkpoints/download.py mtrn --arch BNInception --modality
 Flow`. The checkpoint will be downloaded to the `checkpoints` directory.
 
 The checkpoints accompanying this repository score the following on the test set
@@ -130,13 +130,13 @@ when using 10 crop evaluation.
 
 ## Extracting features
 
-Both classes `TSN` and `TSM` include `features` and `logits` methods, mimicking the 
+Both classes `TSN` and `TSM` include `features` and `logits` methods, mimicking the
 [`pretrainedmodels`](https://github.com/Cadene/pretrained-models.pytorch) API. Simply
-create a model instance `model = TSN(...)` and call `model.features(input)` to 
+create a model instance `model = TSN(...)` and call `model.features(input)` to
 obtain base-model features.
 
 ## Utilities
-You can have a look inside the checkpoints using `python 
-tools/print_checkpoint_details.py <path-to-checkpoint>` to print checkpoint details 
-including the model variant, number of segments, modality, architecture, and weight 
+You can have a look inside the checkpoints using `python
+tools/print_checkpoint_details.py <path-to-checkpoint>` to print checkpoint details
+including the model variant, number of segments, modality, architecture, and weight
 shapes.
