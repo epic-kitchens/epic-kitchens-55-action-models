@@ -1,6 +1,7 @@
 # Non-local block using embedded gaussian
 # Code from
 # https://github.com/AlexHex7/Non-local_pytorch/blob/master/Non-Local_pytorch_0.3.1/lib/non_local_embedded_gaussian.py
+import torch
 from torch import nn
 from torch.nn import functional as F
 

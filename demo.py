@@ -19,19 +19,72 @@ parser.add_argument(
     choices=["tsn", "tsm", "tsm-nl", "trn", "mtrn"],
     default=None,
 )
-parser.add_argument("--checkpoint", type=Path)
-parser.add_argument("--arch", default="resnet50", choices=["BNinception", "resnet50"])
-parser.add_argument("--modality", default="RGB", choices=["RGB", "Flow"])
-parser.add_argument("--flow-length", default=5, type=int)
-parser.add_argument("--dropout", default=0.7, type=float)
-parser.add_argument("--trn-img-feature-dim", default=256, type=int)
-parser.add_argument("--segment-count", default=8, type=int)
-parser.add_argument("--tsn-consensus-type", choices=["avg", "max"], default="avg")
-parser.add_argument("--tsm-shift-div", default=8, type=int)
 parser.add_argument(
-    "--tsm-shift-place", default="blockres", choices=["block", "blockres"]
+    "--checkpoint",
+    type=Path,
+    help="Path to checkpointed model. Should be a dictionary containing the keys:"
+    " 'model_type', 'segment_count', 'modality', 'state_dict', and 'arch'.",
 )
-parser.add_argument("--tsm-temporal-pool", action="store_true")
+parser.add_argument(
+    "--arch",
+    default="resnet50",
+    choices=["BNInception", "resnet50"],
+    help="Backbone architecture",
+)
+parser.add_argument(
+    "--modality", default="RGB", choices=["RGB", "Flow"], help="Input modality"
+)
+parser.add_argument(
+    "--flow-length", default=5, type=int, help="Number of (u, v) pairs in flow stack"
+)
+parser.add_argument(
+    "--dropout",
+    default=0.7,
+    type=float,
+    help="Dropout probability. The dropout layer replaces the "
+    "backbone's classification layer.",
+)
+parser.add_argument(
+    "--trn-img-feature-dim",
+    default=256,
+    type=int,
+    help="Number of dimensions for the output of backbone network. "
+    "This is effectively the image feature dimensionality.",
+)
+parser.add_argument(
+    "--segment-count",
+    default=8,
+    type=int,
+    help="Number of segments. For RGB this corresponds to number of "
+    "frames, whereas for Flow, it is the number of points from "
+    "which a stack of (u, v) frames are sampled.",
+)
+parser.add_argument(
+    "--tsn-consensus-type",
+    choices=["avg", "max"],
+    default="avg",
+    help="Consensus function for TSN used to fuse class scores from "
+    "each segment's predictoin.",
+)
+parser.add_argument(
+    "--tsm-shift-div",
+    default=8,
+    type=int,
+    help="Reciprocal proportion of features temporally-shifted.",
+)
+parser.add_argument(
+    "--tsm-shift-place",
+    default="blockres",
+    choices=["block", "blockres"],
+    help="Location for the temporal shift to take place. Either 'block' for the shift "
+    "to happen in the non-residual part of a block, or 'blockres' if the shift happens "
+    "in the residual path.",
+)
+parser.add_argument(
+    "--tsm-temporal-pool",
+    action="store_true",
+    help="Gradually temporally pool throughout the network",
+)
 parser.add_argument("--batch-size", default=1, type=int, help="Batch size for demo")
 parser.add_argument("--print-model", action="store_true", help="Print model definition")
 
@@ -70,7 +123,7 @@ def main(args):
     if args.modality == "RGB":
         channel_dim = 3
     elif args.modality == "Flow":
-        channel_dim = args.new_length * 2
+        channel_dim = args.flow_length * 2
     else:
         raise ValueError(f"Unknown modality {args.modality}")
     input = torch.randn(

@@ -16,6 +16,8 @@ class SegmentConsensus(torch.autograd.Function):
         self.shape = input_tensor.size()
         if self.consensus_type == "avg":
             output = input_tensor.mean(dim=self.dim, keepdim=True)
+        elif self.consensus_type == "max":
+            output, _ = input_tensor.max(dim=self.dim, keepdim=True)
         elif self.consensus_type == "identity":
             output = input_tensor
         else:
