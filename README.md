@@ -109,7 +109,12 @@ model.load_state_dict(ckpt['state_dict'])
 ```
 
 
-## Checkpoint results
+## Checkpoints
+You can download checkpoints using the tool provided at `checkpoints/download.py`,
+simply call it with the model variant, modality, and architecture that you wish to 
+download, e.g. `python checkpoints/download.py mtrn --arch BNInception --modality 
+Flow`. The checkpoint will be downloaded to the `checkpoints` directory.
+
 The checkpoints accompanying this repository score the following on the test set
 when using 10 crop evaluation.
 
