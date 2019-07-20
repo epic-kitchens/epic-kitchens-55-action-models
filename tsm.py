@@ -449,7 +449,7 @@ class TSM(nn.Module):
             base_model.load_state_dict(sd)
             LOG.info("=> Loading pretrained Flow weight done...")
         else:
-            LOG.warn("#" * 30, "Warning! No Flow pretrained model is found")
+            LOG.warning("#" * 30 + "Warning! No Flow pretrained model is found")
         return base_model
 
     def _construct_diff_model(self, base_model, keep_rgb=False):
