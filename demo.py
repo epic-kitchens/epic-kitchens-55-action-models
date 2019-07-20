@@ -120,9 +120,9 @@ def main(args):
     if args.print_model:
         print(model)
     height, width = model.input_size, model.input_size
-    if args.modality == "RGB":
+    if model.modality == "RGB":
         channel_dim = 3
-    elif args.modality == "Flow":
+    elif model.modality == "Flow":
         channel_dim = args.flow_length * 2
     else:
         raise ValueError(f"Unknown modality {args.modality}")
