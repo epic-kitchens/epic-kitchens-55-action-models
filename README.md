@@ -108,6 +108,14 @@ model = TSN(
 model.load_state_dict(ckpt['state_dict'])
 ```
 
+We provide some helpers functions for this purpose in `model_loaders.py` so you can 
+simply load checkpoints like:
+
+```python
+from model_loader import load_checkpoint
+model = load_checkpoint('path/to/checkpoint.pth.tar')
+```
+
 
 ## Checkpoints
 You can download checkpoints using the tool provided at `checkpoints/download.py`,
