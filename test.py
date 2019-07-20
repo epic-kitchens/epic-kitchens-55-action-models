@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 from typing import List
+import demo
 
 import pytest
 
@@ -49,4 +50,4 @@ example_cli_args = [
 
 @pytest.mark.parametrize("args", example_cli_args)
 def test_demo(args: List[str]):
-    subprocess.check_call(["python", DEMO_SCRIPT_PATH, *args])
+    demo.main(demo.parser.parse_args(args))
