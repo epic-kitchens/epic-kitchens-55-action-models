@@ -7,7 +7,7 @@ import pytest
 from model_loader import load_checkpoint
 
 HERE = Path(__file__).parent
-CHECKPOINT_DIR = HERE / "checkpoints_new"
+CHECKPOINT_DIR = HERE / "checkpoints"
 DEMO_SCRIPT_PATH = HERE / "demo.py"
 
 
