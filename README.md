@@ -129,9 +129,9 @@ when using 10 crop evaluation.
 | Checkpoint path | Seen V@1 | Seen N@1 | Seen A@1 | Unseen V@1 | Unseen N@1 | Unseen A@1 |
 |-----------------|----------|----------|----------|------------|------------|------------|
 | `TRN_arch=resnet50_modality=RGB_segments=8.pth.tar`   | 58.82 | 37.27 | 26.62 | 47.32 | 23.69 | 15.71 |
-| `TRN_arch=resnet50_modality=Flow_segments=8.pth.tar`  | 55.16	| 23.19 | 15.77 | 50.39	| 18.50	| 12.02 |
+| `TRN_arch=resnet50_modality=Flow_segments=8.pth.tar`  | 55.16  | 23.19 | 15.77 | 50.39  | 18.50  | 12.02 |
 | `MTRN_arch=resnet50_modality=RGB_segments=8.pth.tar`  | **60.16** | 38.36 | **28.23** | 46.94 | **24.41** | **16.32** |
-| `MTRN_arch=resnet50_modality=Flow_segments=8.pth.tar` | 56.79	| 25.00	| 17.24 | 50.36 | 20.28 | 13.42 |
+| `MTRN_arch=resnet50_modality=Flow_segments=8.pth.tar` | 56.79  | 25.00  | 17.24 | 50.36 | 20.28 | 13.42 |
 | `TSM_arch=resnet50_modality=RGB_segments=8.pth.tar`   | 57.88 | **40.84** | **28.22** | 43.50 | 23.32 | 14.99 |
 | `TSM_arch=resnet50_modality=Flow_segments=8.pth.tar`  | 58.08 | 27.49 | 19.14 | **52.68** | 20.83 | 14.27 |
 
@@ -148,3 +148,49 @@ You can have a look inside the checkpoints using `python
 tools/print_checkpoint_details.py <path-to-checkpoint>` to print checkpoint details
 including the model variant, number of segments, modality, architecture, and weight
 shapes.
+
+## Acknowledgements
+
+We'd like to thank the academics and authors responsible for the following codebases that enabled this work.
+
+- [TSN](https://github.com/yjxiong/tsn-pytorch)
+- [TRN](https://github.com/metalbubble/TRN-pytorch)
+- [TSM](https://github.com/mit-han-lab/temporal-shift-module)
+- [pretrained-models.pytorch](https://github.com/Cadene/pretrained-models.pytorch)
+
+If you make use of this repository, please cite their work as well as ours
+
+TSN:
+```
+@InProceedings{wang2016_TemporalSegmentNetworks,
+    title={Temporal Segment Networks: Towards Good Practices for Deep Action Recognition},
+    author={Limin Wang and Yuanjun Xiong and Zhe Wang and Yu Qiao and Dahua Lin and
+            Xiaoou Tang and Luc {Val Gool}},
+    booktitle={The European Conference on Computer Vision (ECCV)},
+    year={2016}
+}
+```
+
+TRN:
+```
+@InProceedings{zhou2017_TemporalRelationalReasoning,
+    title={Temporal Relational Reasoning in Videos},
+    author={Zhou, Bolei and Andonian, Alex and Oliva, Aude and Torralba, Antonio},
+    booktitle={The European Conference on Computer Vision (ECCV)},
+    month={September},
+    year={2018}
+}
+```
+
+TSM:
+```
+@article{lin2018_TemporalShiftModule,
+    title={Temporal Shift Module for Efficient Video Understanding},
+    author={Lin, Ji and Gan, Chuang and Han, Song},
+    journal={arXiv preprint arXiv:1811.08383},
+    archivePrefix={arXiv},
+    eprint={1811.08383},
+    year={2018},
+    month="Nov"
+}
+```
