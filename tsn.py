@@ -23,6 +23,10 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Notice of change:
+# Modified by Will Price to support multiple output classification layers and `features()` and
+# `logits()` methods.
+
 import logging
 from pathlib import Path
 from typing import Tuple, Union

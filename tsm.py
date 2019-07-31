@@ -17,6 +17,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Notice of change:
+# Modified by Will Price to support multiple output classification layers and `features()` and
+# `logits()` methods.
+
 import logging
 from typing import Tuple, Union
 
