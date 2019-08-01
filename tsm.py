@@ -58,6 +58,7 @@ class TSM(nn.Module):
         non_local=False,
     ):
         super(TSM, self).__init__()
+        self.arch = base_model
         self.num_class = num_class
         self.is_multitask = isinstance(num_class, (list, tuple))
         if self.is_multitask:

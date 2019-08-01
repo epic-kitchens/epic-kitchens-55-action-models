@@ -59,6 +59,7 @@ class TSN(nn.Module):
         partial_bn=True,
     ):
         super(TSN, self).__init__()
+        self.arch = base_model
         self.modality = modality
         self.num_segments = num_segments
         self.reshape = True
