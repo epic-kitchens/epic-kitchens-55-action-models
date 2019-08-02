@@ -108,7 +108,7 @@ model = TSN(
 model.load_state_dict(ckpt['state_dict'])
 ```
 
-We provide some helpers functions for this purpose in `model_loaders.py` so you can 
+We provide some helpers functions for this purpose in `model_loaders.py` so you can
 simply load checkpoints like:
 
 ```python
@@ -158,6 +158,37 @@ You can have a look inside the checkpoints using `python
 tools/print_checkpoint_details.py <path-to-checkpoint>` to print checkpoint details
 including the model variant, number of segments, modality, architecture, and weight
 shapes.
+
+
+## Citation
+
+If you find our code and trained models helpful, please kindly cite our work
+and dataset in addition to the authors of the models themselves (citation
+information for this is in the following section).
+
+```
+@article{price2019_EvaluationActionRecognition,
+    title={An Evaluation of Action Recognition Models on EPIC-Kitchens},
+    author={Price, Will and Damen, Dima},
+    journal={arXiv preprint arXiv:1908.XXXX},
+    archivePrefix={arXiv},
+    eprint={1908.XXXX},
+    year={2019},
+    month="Aug"
+}
+```
+
+```
+@inproceedings{damen2018_ScalingEgocentricVision,
+   title={Scaling Egocentric Vision: The EPIC-KITCHENS Dataset},
+   author={Damen, Dima and Doughty, Hazel and Farinella, Giovanni Maria  and Fidler, Sanja and
+           Furnari, Antonino and Kazakos, Evangelos and Moltisanti, Davide and Munro, Jonathan
+           and Perrett, Toby and Price, Will and Wray, Michael},
+   booktitle={European Conference on Computer Vision (ECCV)},
+   year={2018}
+}
+```
+
 
 ## Acknowledgements
 
