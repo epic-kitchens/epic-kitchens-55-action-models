@@ -149,7 +149,9 @@ when using 10 crop evaluation.
 Both classes `TSN` and `TSM` include `features` and `logits` methods, mimicking the
 [`pretrainedmodels`](https://github.com/Cadene/pretrained-models.pytorch) API. Simply
 create a model instance `model = TSN(...)` and call `model.features(input)` to
-obtain base-model features.
+obtain base-model features. To transform these to logits, call
+`model.logits(features)` where `features` is the tensor obtained from the
+previous step.
 
 ## Utilities
 You can have a look inside the checkpoints using `python
