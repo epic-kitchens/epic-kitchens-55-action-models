@@ -126,14 +126,22 @@ Flow`. The checkpoint will be downloaded to the `checkpoints` directory.
 The checkpoints accompanying this repository score the following on the test set
 when using 10 crop evaluation.
 
-| Checkpoint path | Seen V@1 | Seen N@1 | Seen A@1 | Unseen V@1 | Unseen N@1 | Unseen A@1 |
-|-----------------|----------|----------|----------|------------|------------|------------|
-| `TRN_arch=resnet50_modality=RGB_segments=8.pth.tar`   | 58.82 | 37.27 | 26.62 | 47.32 | 23.69 | 15.71 |
-| `TRN_arch=resnet50_modality=Flow_segments=8.pth.tar`  | 55.16  | 23.19 | 15.77 | 50.39  | 18.50  | 12.02 |
-| `MTRN_arch=resnet50_modality=RGB_segments=8.pth.tar`  | **60.16** | 38.36 | **28.23** | 46.94 | **24.41** | **16.32** |
-| `MTRN_arch=resnet50_modality=Flow_segments=8.pth.tar` | 56.79  | 25.00  | 17.24 | 50.36 | 20.28 | 13.42 |
-| `TSM_arch=resnet50_modality=RGB_segments=8.pth.tar`   | 57.88 | **40.84** | **28.22** | 43.50 | 23.32 | 14.99 |
-| `TSM_arch=resnet50_modality=Flow_segments=8.pth.tar`  | 58.08 | 27.49 | 19.14 | **52.68** | 20.83 | 14.27 |
+| Checkpoint path                                          | Seen V@1  | Seen N@1  | Seen A@1  | Unseen V@1 | Unseen N@1 | Unseen A@1 |
+|----------------------------------------------------------|-----------|-----------|-----------|------------|------------|------------|
+| `TSN_arch=BNInception_modality=RGB_segments=8.pth.tar`   | 47.97     | 38.85     | 22.39     | 36.46      | 22.64      | 22.39      |
+| `TSN_arch=BNInception_modality=Flow_segments=8.pth.tar`  | 51.68     | 26.82     | 16.76     | 47.35      | 21.20      | 13.49      |
+| `TRN_arch=BNInception_modality=RGB_segments=8.pth.tar`   | 58.26     | 36.32     | 25.46     | 47.29      | 22.91      | 15.06      |
+| `TRN_arch=BNInception_modality=Flow_segments=8.pth.tar`  | 55.20     | 23.95     | 16.03     | 50.32      | 19.02      | 12.77      |
+| `MTRN_arch=BNInception_modality=RGB_segments=8.pth.tar`  | 55.76     | 37.94     | 26.62     | 45.41      | 23.90      | 15.57      |
+| `MTRN_arch=BNInception_modality=Flow_segments=8.pth.tar` | 55.92     | 24.88     | 16.78     | 51.38      | 20.69      | 14.00      |
+| `TSN_arch=resnet50_modality=RGB_segments=8.pth.tar`      | 49.71     | 39.85     | 23.97     | 36.70      | 23.11      | 12.77      |
+| `TSN_arch=resnet50_modality=Flow_segments=8.pth.tar`     | 53.14     | 27.76     | 20.28     | 47.56      | 20.28      | 13.11      |
+| `TRN_arch=resnet50_modality=RGB_segments=8.pth.tar`      | 58.82     | 37.27     | 26.62     | 47.32      | 23.69      | 15.71      |
+| `TRN_arch=resnet50_modality=Flow_segments=8.pth.tar`     | 55.16     | 23.19     | 15.77     | 50.39      | 18.50      | 12.02      |
+| `MTRN_arch=resnet50_modality=RGB_segments=8.pth.tar`     | **60.16** | 38.36     | **28.23** | 46.94      | **24.41**  | **16.32**  |
+| `MTRN_arch=resnet50_modality=Flow_segments=8.pth.tar`    | 56.79     | 25.00     | 17.24     | 50.36      | 20.28      | 13.42      |
+| `TSM_arch=resnet50_modality=RGB_segments=8.pth.tar`      | 57.88     | **40.84** | **28.22** | 43.50      | 23.32      | 14.99      |
+| `TSM_arch=resnet50_modality=Flow_segments=8.pth.tar`     | 58.08     | 27.49     | 19.14     | **52.68**  | 20.83      | 14.27      |
 
 
 ## Extracting features
