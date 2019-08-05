@@ -170,9 +170,9 @@ information for this is in the following section).
 @article{price2019_EvaluationActionRecognition,
     title={An Evaluation of Action Recognition Models on EPIC-Kitchens},
     author={Price, Will and Damen, Dima},
-    journal={arXiv preprint arXiv:1908.XXXX},
+    journal={arXiv preprint arXiv:1908.00867},
     archivePrefix={arXiv},
-    eprint={1908.XXXX},
+    eprint={1908.00867},
     year={2019},
     month="Aug"
 }
