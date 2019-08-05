@@ -36,7 +36,10 @@ import pretrainedmodels
 import torch
 from torch import nn
 from torch.nn.init import constant_, normal_
+from torch.utils import model_zoo
 
+from pretrained_settings import urls as pretrained_urls, InvalidPretrainError
+from pretrained_settings import ModelConfig
 from ops.basic_ops import ConsensusModule
 from ops.trn import return_TRN
 
@@ -44,31 +47,70 @@ LOG = logging.getLogger(__name__)
 
 
 class TSN(nn.Module):
+    """
+    Temporal Segment Network
+
+    See https://arxiv.org/abs/1608.00859 for more details.
+
+    Args:
+        num_class:
+            number of classes, can be either a single integer,
+            or a 2-tuple for training verb+noun multi-task models
+        num_segments:
+            number of frames/optical flow stacks input into the model
+        modality:
+            either ``rgb`` or ``flow``.
+        base_model:
+            backbone model architecture one of ``resnet18``, ``resnet30``,
+            ``resnet50``, ``bninception``, ``inceptionv3``, ``vgg16``.
+            ``bninception`` and ``resnet50`` are the most thoroughly tested.
+        new_length:
+            the number of channel inputs per snippet
+        consensus_type:
+            the consensus function used to combined information across segments.
+            one of ``avg``, ``max``, ``trn``, ``trnmultiscale``.
+        before_softmax:
+            whether to output class score before or after softmax.
+        dropout:
+            the dropout probability. the dropout layer replaces the backbone's
+            classification layer.
+        img_feature_dim:
+            only for trn/mtrn models. the dimensionality of the features used for
+            relational reasoning.
+        partial_bn:
+            whether to freeze all bn layers beyond the first 2 layers.
+        pretrained:
+            either ``'imagenet'`` for imagenet initialised models,
+            or ``'epic-kitchens'`` for weights pretrained on epic-kitchens.
+    """
+
     def __init__(
         self,
         num_class,
         num_segments,
         modality,
-        base_model="resnet101",
+        base_model="resnet50",
         new_length=None,
         consensus_type="avg",
         before_softmax=True,
-        dropout=0.8,
+        dropout=0.7,
         img_feature_dim=256,
-        crop_num=1,
         partial_bn=True,
+        pretrained="imagenet",
     ):
+
         super(TSN, self).__init__()
-        self.arch = base_model
-        self.modality = modality
+        self.num_class = num_class
         self.num_segments = num_segments
-        self.reshape = True
+        self.modality = modality
+        self.arch = base_model
+        self.consensus_type = consensus_type
         self.before_softmax = before_softmax
         self.dropout = dropout
         self.img_feature_dim = img_feature_dim
-        self.crop_num = crop_num
-        self.consensus_type = consensus_type
-        self.num_class = num_class
+        self._enable_pbn = partial_bn
+        self.pretrained = pretrained
+        self.reshape = True
         if not before_softmax and consensus_type != "avg":
             raise ValueError("Only avg consensus can be used after Softmax")
 
@@ -124,12 +166,54 @@ TSN Configurations:
         if not self.before_softmax:
             self.softmax = nn.Softmax()
 
-        self._enable_pbn = partial_bn
         if partial_bn:
             self.partialBN(True)
+        if pretrained and pretrained != "imagenet":
+            self._load_pretrained_model(pretrained)
+
+    def _load_pretrained_model(self, pretrained):
+        config = self._get_pretrained_model_config()
+        try:
+            weights_url = pretrained_urls[pretrained][config]
+        except KeyError:
+            raise InvalidPretrainError(
+                "The model configuration {} has no pretrained checkpoint".format(config)
+            )
+        checkpoint_dict = model_zoo.load_url(weights_url)
+        if checkpoint_dict["segment_count"] != self.num_segments:
+            raise ValueError(
+                "Checkpoint was trained with {} segments, but model is "
+                "configured for {} segments.".format(
+                    checkpoint_dict["segment_count"], self.num_segments
+                )
+            )
+        if checkpoint_dict["modality"] != self.modality:
+            raise ValueError(
+                "Checkpoint is trained for {} input, but model is "
+                "configured for {} input.".format(
+                    checkpoint_dict["modality"], self.modality
+                )
+            )
+        state_dict = checkpoint_dict["state_dict"]
+        self.load_state_dict(state_dict)
+
+    def _get_pretrained_model_config(self):
+        if self.consensus_type == "TRN":
+            variant = "TRN"
+        elif self.consensus_type == "TRNMultiscale":
+            variant = "MTRN"
+        else:
+            variant = "TSN"
+
+        return ModelConfig(
+            variant=variant,
+            base_model=self.arch,
+            modality=self.modality,
+            num_segments=self.num_segments,
+            consensus_type=self.consensus_type,
+        )
 
     def _remove_last_layer(self):
-        # This is only for removing the last layer of BNInception
         delattr(self.base_model, self.base_model.last_layer_name)
         for tup in self.base_model._op_list:
             if tup[0] == self.base_model.last_layer_name:
@@ -168,10 +252,11 @@ TSN Configurations:
             self._initialise_layer(self.fc_noun)
 
     def _prepare_base_model(self, base_model):
+        backbone_pretrained = "imagenet" if self.pretrained == "imagenet" else None
 
         if "resnet" in base_model.lower() or "vgg" in base_model.lower():
             self.base_model = getattr(pretrainedmodels, base_model)(
-                pretrained="imagenet"
+                pretrained=backbone_pretrained
             )
             self.base_model.last_layer_name = "last_linear"
             self.input_size = 224
@@ -188,7 +273,7 @@ TSN Configurations:
                 )
         elif base_model.lower() == "bninception":
             self.base_model = getattr(pretrainedmodels, base_model.lower())(
-                pretrained="imagenet"
+                pretrained=backbone_pretrained
             )
             self.base_model.last_layer_name = "last_linear"
             self.input_size = 224
@@ -201,7 +286,7 @@ TSN Configurations:
                 self.input_mean = self.input_mean * (1 + self.new_length)
         elif base_model.lower() == "inceptionv3":
             self.base_model = getattr(pretrainedmodels, base_model.lower())(
-                pretrained="imagenet"
+                pretrained=backbone_pretrained
             )
             self.base_model.last_layer_name = "top_cls_fc"
             self.input_size = 299
@@ -226,7 +311,7 @@ TSN Configurations:
             for m in self.base_model.modules():
                 if isinstance(m, nn.BatchNorm2d):
                     count += 1
-                    if count >= (2 if self._enable_pbn else 1):
+                    if count >= 2:
                         m.eval()
 
                         # shutdown update in frozen mode
@@ -563,3 +648,135 @@ if __name__ == "__main__":
     except ImportError:
         print("torchviz must be installed to generate an architecture diagram")
         sys.exit(1)
+
+
+class TRN(TSN):
+    """
+    Single-scale Temporal Relational Network
+
+    See https://arxiv.org/abs/1711.08496 for more details.
+    Args:
+        num_class:
+            Number of classes, can be either a single integer,
+            or a 2-tuple for training verb+noun multi-task models
+        num_segments:
+            Number of frames/optical flow stacks input into the model
+        modality:
+            Either ``RGB`` or ``Flow``.
+        base_model:
+            Backbone model architecture one of ``resnet18``, ``resnet30``,
+            ``resnet50``, ``BNInception``, ``InceptionV3``, ``VGG16``.
+            ``BNInception`` and ``resnet50`` are the most thoroughly tested.
+        new_length:
+            The number of channel inputs per snippet
+        consensus_type:
+            The consensus function used to combined information across segments.
+            One of ``avg``, ``max``, ``TRN``, ``TRNMultiscale``.
+        before_softmax:
+            Whether to output class score before or after softmax.
+        dropout:
+            The dropout probability. The dropout layer replaces the backbone's
+            classification layer.
+        img_feature_dim:
+            Only for TRN/MTRN models. The dimensionality of the features used for
+            relational reasoning.
+        partial_bn:
+            Whether to freeze all BN layers beyond the first 2 layers.
+        pretrained:
+            Either ``'imagenet'`` for ImageNet initialised models,
+            or ``'epic-kitchens'`` for weights pretrained on EPIC-Kitchens.
+    """
+
+    def __init__(
+        self,
+        num_class,
+        num_segments,
+        modality,
+        base_model="resnet50",
+        new_length=None,
+        before_softmax=True,
+        dropout=0.7,
+        img_feature_dim=256,
+        partial_bn=True,
+        pretrained="imagenet",
+    ):
+
+        super().__init__(
+            num_class=num_class,
+            num_segments=num_segments,
+            modality=modality,
+            base_model=base_model,
+            new_length=new_length,
+            consensus_type="TRN",
+            before_softmax=before_softmax,
+            dropout=dropout,
+            img_feature_dim=img_feature_dim,
+            partial_bn=partial_bn,
+            pretrained=pretrained,
+        )
+
+
+class MTRN(TSN):
+    """
+    Multi-scale Temporal Relational Network
+
+    See https://arxiv.org/abs/1711.08496 for more details.
+    Args:
+        num_class:
+            Number of classes, can be either a single integer,
+            or a 2-tuple for training verb+noun multi-task models
+        num_segments:
+            Number of frames/optical flow stacks input into the model
+        modality:
+            Either ``RGB`` or ``Flow``.
+        base_model:
+            Backbone model architecture one of ``resnet18``, ``resnet30``,
+            ``resnet50``, ``BNInception``, ``InceptionV3``, ``VGG16``.
+            ``BNInception`` and ``resnet50`` are the most thoroughly tested.
+        new_length:
+            The number of channel inputs per snippet
+        consensus_type:
+            The consensus function used to combined information across segments.
+            One of ``avg``, ``max``, ``TRN``, ``TRNMultiscale``.
+        before_softmax:
+            Whether to output class score before or after softmax.
+        dropout:
+            The dropout probability. The dropout layer replaces the backbone's
+            classification layer.
+        img_feature_dim:
+            Only for TRN/MTRN models. The dimensionality of the features used for
+            relational reasoning.
+        partial_bn:
+            Whether to freeze all BN layers beyond the first 2 layers.
+        pretrained:
+            Either ``'imagenet'`` for ImageNet initialised models,
+            or ``'epic-kitchens'`` for weights pretrained on EPIC-Kitchens.
+    """
+
+    def __init__(
+        self,
+        num_class,
+        num_segments,
+        modality,
+        base_model="resnet50",
+        new_length=None,
+        before_softmax=True,
+        dropout=0.7,
+        img_feature_dim=256,
+        partial_bn=True,
+        pretrained="imagenet",
+    ):
+
+        super().__init__(
+            num_class=num_class,
+            num_segments=num_segments,
+            modality=modality,
+            base_model=base_model,
+            new_length=new_length,
+            consensus_type="TRNMultiscale",
+            before_softmax=before_softmax,
+            dropout=dropout,
+            img_feature_dim=img_feature_dim,
+            partial_bn=partial_bn,
+            pretrained=pretrained,
+        )

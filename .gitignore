@@ -164,3 +164,6 @@ fabric.properties
 .idea
 
 **/__pycache__
+
+/checkpoints*
+/results*

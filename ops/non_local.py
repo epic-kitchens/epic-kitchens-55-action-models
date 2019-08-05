@@ -223,6 +223,5 @@ if __name__ == "__main__":
         img = torch.zeros(*([2, 3] + [20] * dim))
         print("img shape: {}".format(img.shape))
         net = fn(3, sub_sample=sub_sample, bn_layer=bn_layer)
-        out = net(img)
+        out = net(img)  # type: ignore
         print(out.size())
-

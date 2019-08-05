@@ -29,33 +29,83 @@ import pretrainedmodels
 import torch
 from torch import nn
 from torch.nn.init import constant_, normal_
+from torch.utils import model_zoo
 
 from ops.basic_ops import ConsensusModule
+from pretrained_settings import urls as pretrained_urls
+from pretrained_settings import InvalidPretrainError, ModelConfig
 
 LOG = logging.getLogger(__name__)
 
 
 class TSM(nn.Module):
+    """
+    Temporal Shift Module
+
+    See https://arxiv.org/abs/1811.08383 for details.
+
+    Args:
+        num_class:
+            Number of classes, can be either a single integer,
+            or a 2-tuple for training verb+noun multi-task models
+        num_segments:
+            Number of frames/optical flow stacks input into the model
+        modality:
+            Either ``RGB`` or ``Flow``.
+        base_model:
+            Backbone model architecture one of ``resnet18``, ``resnet30``,
+            ``resnet50``, ``BNInception``.
+        new_length:
+            The number of channel inputs per snippet
+        consensus_type:
+            The consensus function used to combined information across segments.
+            One of ``avg``, ``max``, ``TRN``, ``TRNMultiscale``.
+        before_softmax:
+            Whether to output class score before or after softmax.
+        dropout:
+            The dropout probability. The dropout layer replaces the backbone's
+            classification layer.
+        img_feature_dim:
+            Only for TRN/MTRN models. The dimensionality of the features used for
+            relational reasoning.
+        partial_bn:
+            Whether to freeze all BN layers beyond the first 2 layers.
+        shift_div:
+            The reciprocal of the proportion of channels that will be shifted
+            along the time dimension.
+        shift_place:
+            Either ``'blockres'`` or ``'block'``. The former will place the shift
+            module in the residual branch (only compatible with ResNet derived
+            backbones), and the latter will place the shift module on the main
+            network path.
+        fc_lr5:
+            Whether to add a x5 multiplier to the the fully connected layer
+        temporal_pool:
+            Whether to gradually temporally pool throughout the network
+        non_local:
+            Whether to inject non-local blocks
+        pretrained:
+            Either ``'imagenet'`` for ImageNet initialised models,
+            or ``'epic-kitchens'`` for weights pretrained on EPIC-Kitchens.
+    """
+
     def __init__(
         self,
         num_class,
         num_segments,
         modality,
-        base_model="resnet101",
+        base_model="resnet50",
         new_length=None,
         consensus_type="avg",
         before_softmax=True,
         dropout=0.8,
-        crop_num=1,
         partial_bn=True,
-        print_spec=True,
-        pretrain="imagenet",
-        is_shift=False,
         shift_div=8,
         shift_place="blockres",
         fc_lr5=False,
         temporal_pool=False,
         non_local=False,
+        pretrained="imagenet",
     ):
         super(TSM, self).__init__()
         self.arch = base_model
@@ -70,11 +120,10 @@ class TSM(nn.Module):
         self.reshape = True
         self.before_softmax = before_softmax
         self.dropout = dropout
-        self.crop_num = crop_num
         self.consensus_type = consensus_type
-        self.pretrain = pretrain
+        self.pretrained = pretrained
 
-        self.is_shift = is_shift
+        self.is_shift = True
         self.shift_div = shift_div
         self.shift_place = shift_place
         self.base_model_name = base_model
@@ -89,27 +138,26 @@ class TSM(nn.Module):
             self.new_length = 1 if modality == "RGB" else 5
         else:
             self.new_length = new_length
-        if print_spec:
-            LOG.info(
-                (
-                    """
-    Initializing TSM with base model: {}.
-    TSM Configurations:
-        input_modality:     {}
-        num_segments:       {}
-        new_length:         {}
-        consensus_module:   {}
-        dropout_ratio:      {}
-            """.format(
-                        base_model,
-                        self.modality,
-                        self.num_segments,
-                        self.new_length,
-                        consensus_type,
-                        self.dropout,
-                    )
+        LOG.info(
+            (
+                """
+Initializing TSM with base model: {}.
+TSM Configurations:
+    input_modality:     {}
+    num_segments:       {}
+    new_length:         {}
+    consensus_module:   {}
+    dropout_ratio:      {}
+        """.format(
+                    base_model,
+                    self.modality,
+                    self.num_segments,
+                    self.new_length,
+                    consensus_type,
+                    self.dropout,
                 )
             )
+        )
 
         self._prepare_base_model(base_model)
 
@@ -132,6 +180,43 @@ class TSM(nn.Module):
         self._enable_pbn = partial_bn
         if partial_bn:
             self.partialBN(True)
+        if pretrained and pretrained != "imagenet":
+            self._load_pretrained_model(pretrained)
+
+    def _load_pretrained_model(self, pretrained):
+        config = self._get_pretrained_model_config()
+        try:
+            weights_url = pretrained_urls[pretrained][config]
+        except KeyError:
+            raise InvalidPretrainError(
+                "The model configuration {} has no pretrained checkpoint".format(config)
+            )
+        checkpoint_dict = model_zoo.load_url(weights_url)
+        if checkpoint_dict["segment_count"] != self.num_segments:
+            raise ValueError(
+                "Checkpoint was trained with {} segments, but model is "
+                "configured for {} segments.".format(
+                    checkpoint_dict["segment_count"], self.num_segments
+                )
+            )
+        if checkpoint_dict["modality"] != self.modality:
+            raise ValueError(
+                "Checkpoint is trained for {} input, but model is "
+                "configured for {} input.".format(
+                    checkpoint_dict["modality"], self.modality
+                )
+            )
+        state_dict = checkpoint_dict["state_dict"]
+        self.load_state_dict(state_dict)
+
+    def _get_pretrained_model_config(self):
+        return ModelConfig(
+            variant="TSM",
+            base_model=self.arch,
+            modality=self.modality,
+            num_segments=self.num_segments,
+            consensus_type=self.consensus_type,
+        )
 
     def _initialise_layer(self, layer, mean=0, std=0.001):
         normal_(layer.weight, mean, std)
@@ -155,7 +240,6 @@ class TSM(nn.Module):
         return feature_dim
 
     def _remove_last_layer(self):
-        # This is only for removing the last layer of BNInception
         delattr(self.base_model, self.base_model.last_layer_name)
         for tup in self.base_model._op_list:
             if tup[0] == self.base_model.last_layer_name:
@@ -164,9 +248,10 @@ class TSM(nn.Module):
     def _prepare_base_model(self, base_model):
         LOG.info("=> base model: {}".format(base_model))
 
+        backbone_pretrained = "imagenet" if self.pretrained == "imagenet" else None
         if "resnet" in base_model.lower():
             self.base_model = getattr(pretrainedmodels, base_model)(
-                pretrained="imagenet"
+                pretrained=backbone_pretrained
             )
             if self.is_shift:
                 LOG.info("Adding temporal shift...")
@@ -205,7 +290,7 @@ class TSM(nn.Module):
         elif base_model.lower() == "bninception":
             from archs import bninception
 
-            self.base_model = bninception(pretrained=self.pretrain)
+            self.base_model = bninception(pretrained=backbone_pretrained)
             self.input_size = self.base_model.input_size
             self.input_mean = self.base_model.mean
             self.input_std = self.base_model.std

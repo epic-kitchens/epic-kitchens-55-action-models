@@ -4,7 +4,7 @@ from typing import Any, Dict
 import torch
 
 from tsm import TSM
-from tsn import TSN
+from tsn import TSN, TRN, MTRN
 
 verb_class_count, noun_class_count = 125, 352
 class_count = (verb_class_count, noun_class_count)
@@ -25,18 +25,17 @@ def make_tsn(settings):
 def make_trn(settings):
     model_type = settings["model_type"]
     if model_type == "trn":
-        consensus_type = "TRN"
+        cls = TRN
     elif model_type == "mtrn":
-        consensus_type = "TRNMultiscale"
+        cls = MTRN
     else:
         raise ValueError(f"Unknown model_type '{model_type}' for TRN")
-    return TSN(
+    return cls(
         class_count,
         settings["segment_count"],
         settings["modality"],
         base_model=settings["arch"],
         new_length=settings["flow_length"] if settings["modality"] == "Flow" else 1,
-        consensus_type=consensus_type,
         img_feature_dim=settings["img_feature_dim"],
         dropout=settings["dropout"],
     )
@@ -52,7 +51,6 @@ def make_tsm(settings):
         new_length=settings["flow_length"] if settings["modality"] == "Flow" else 1,
         consensus_type="avg",
         dropout=settings["dropout"],
-        is_shift=True,
         shift_div=settings["shift_div"],
         shift_place=settings["shift_place"],
         temporal_pool=settings["temporal_pool"],

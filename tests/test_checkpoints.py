@@ -1,44 +1,45 @@
 import subprocess
 from collections import defaultdict
 from pathlib import Path
-from typing import List
+from typing import List, DefaultDict, Callable, Any
 import demo
 
 import pytest
 
 from model_loader import load_checkpoint
 
-HERE = Path(__file__).parent
-CHECKPOINT_DIR = HERE / "checkpoints"
-DEMO_SCRIPT_PATH = HERE / "demo.py"
+ROOT = Path(__file__).parent.parent
+CHECKPOINT_DIR = ROOT / "checkpoints"
+DEMO_SCRIPT_PATH = ROOT / "demo.py"
+
 
 def extract_model_details_from_filename(filename: str):
-    parts = filename.split('_')
+    parts = filename.split("_")
     model_type = parts[0].lower()
     attributes = dict()
     filename_key_to_attribute_key_map = {
-        'arch': 'arch',
-        'modality': 'modality',
-        'segments': 'num_segments'
+        "arch": "arch",
+        "modality": "modality",
+        "segments": "num_segments",
     }
-    converters = defaultdict(lambda: str, {'segments': int})
+    converters = defaultdict(lambda: str, {"segments": int})  # type: ignore
 
     for part in parts[1:]:
-        name, val = part.split('=')
+        name, val = part.split("=")
         attribute = filename_key_to_attribute_key_map[name]
         attributes[attribute] = converters[name](val)
 
     consensus_types = {
-        'tsn': 'avg',
-        'trn': 'TRN',
-        'mtrn': 'TRNMultiscale',
-        'tsm': 'avg'
+        "tsn": "avg",
+        "trn": "TRN",
+        "mtrn": "TRNMultiscale",
+        "tsm": "avg",
     }
 
     return {
-        'class': 'TSM' if model_type == 'tsm' else 'TSN',
-        'consensus_type': consensus_types[model_type],
-        'attributes': attributes
+        "class": model_type.upper(),
+        "consensus_type": consensus_types[model_type],
+        "attributes": attributes,
     }
 
 
@@ -53,12 +54,15 @@ def find_checkpoints(ckpt_dir: Path) -> List[Path]:
 @pytest.mark.parametrize("path", find_checkpoints(CHECKPOINT_DIR))
 def test_can_load_all_checkpoints(path):
     model = load_checkpoint(path)
-    model_details = extract_model_details_from_filename(path.name[:-len('.pth.tar')])
-    assert model.__class__.__name__ == model_details['class']
-    assert model.consensus_type == model_details['consensus_type']
-    for attr, value in model_details['attributes'].items():
+    suffix_length = len("-" + "X" * 8 + ".pth.tar")
+    model_details = extract_model_details_from_filename(path.name[:-suffix_length])
+    assert model.__class__.__name__ == model_details["class"]
+    assert model.consensus_type == model_details["consensus_type"]
+    for attr, value in model_details["attributes"].items():
         actual_value = getattr(model, attr)
-        assert actual_value == value, f"Expected {attr} to be {value} but was {actual_value}"
+        assert (
+            actual_value == value
+        ), f"Expected {attr} to be {value} but was {actual_value}"
 
 
 example_cli_args = [
