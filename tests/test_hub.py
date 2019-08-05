@@ -3,9 +3,10 @@ from tsn import TSN, TRN, MTRN
 from tsm import TSM
 from itertools import product
 import pytest
+import os
 
 
-repo = "epic-kitchens/action-models:pytorch-hub-support"
+repo = os.getenv("HUB_ID", "epic-kitchens/action-models:pytorch-hub-support")
 epic_class_counts = (125, 352)
 segment_count = 8
 

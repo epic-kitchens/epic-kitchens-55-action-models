@@ -8,7 +8,7 @@ ModelConfig = namedtuple(
     ["variant", "base_model", "modality", "num_segments", "consensus_type"],
 )
 _epic_url_base = (
-    "https://wp-research-public.s3-eu-west-1.amazonaws.com/epic-models-checkpoints/"
+    "https://data.bris.ac.uk/datasets/2tw6gdvmfj3f12papdy24flvmo/"
 )
 
 
