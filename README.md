@@ -1,5 +1,7 @@
 # EPIC-Kitchens' action recognition models
 
+[![arXiv](https://img.shields.io/badge/arXiv-1908.00867-red)](https://arxiv.org/abs/1908.00867)
+
 This is a set of models trained for EPIC-Kitchens baselines. We support:
 
 - [TSN](https://github.com/yjxiong/tsn-pytorch)
