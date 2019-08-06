@@ -78,6 +78,8 @@ $ pip install git+https://github.com/wpwei/pretrained-models.pytorch.git@vision_
 
 ## Local Installation
 
+Models are available to downloaded from [data.bris.ac.uk](https://data.bris.ac.uk/data/dataset/2tw6gdvmfj3f12papdy24flvmo).
+
 We provide an `environment.yml` file to create a conda environment. Sadly not all of the
 set up can be encapsulated in this file, so you have to perform some steps yourself
 (in the interest of eeking extra performance!)
@@ -122,6 +124,7 @@ You should see something like
 
 Pillow doesn't release with `post` suffixes, so if you have `post` in the version
 name, it's likely you have `pillow-simd` installed.
+
 
 ## How to use the code
 
