@@ -189,6 +189,37 @@ from model_loader import load_checkpoint
 model = load_checkpoint('path/to/checkpoint.pth.tar')
 ```
 
+## Data Loading
+
+We make use of the [transforms available in the original TSN codebase](https://github.com/yjxiong/tsn-pytorch/blob/master/transforms.py). Providing you load your frames as a list of [`PIL.Image`](https://pillow.readthedocs.io/en/stable/reference/Image.html#the-image-class) you can reuse the same data loading code as we use below. Note that you will have to populate the `net` and `backbone_arch` variables with the instantiation of the network and a string describing the name of the backbone architecture (e.g. `'resnet50'` or `'BNInception'`).
+
+```python
+from torchvision.transforms import Compose
+from transforms import GroupScale, GroupCenterCrop, GroupOverSample, Stack, ToTorchFormatTensor, GroupNormalize
+
+crop_count = 10
+net = ...
+backbone_arch = ...
+
+if crop_count == 1:
+    cropping = Compose([
+        GroupScale(net.scale_size),
+        GroupCenterCrop(net.input_size),
+    ])
+elif crop_count == 10:
+    cropping = GroupOverSample(net.input_size, net.scale_size)
+else:
+    raise ValueError("Only 1 and 10 crop_count are supported while we got {}".format(crop_count))
+
+transform = Compose([
+    cropping,
+    Stack(roll=backbone_arch == 'BNInception'),
+    ToTorchFormatTensor(div=backbone_arch != 'BNInception'),
+    GroupNormalize(net.input_mean, net.input_std),
+])
+```
+
+
 
 ## Checkpoints
 
