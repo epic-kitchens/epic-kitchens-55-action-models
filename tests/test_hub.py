@@ -6,7 +6,7 @@ import pytest
 import os
 
 
-repo = os.getenv("HUB_ID", "epic-kitchens/action-models:pytorch-hub-support")
+repo = os.getenv("HUB_ID", "epic-kitchens/action-models")
 epic_class_counts = (125, 352)
 segment_count = 8
 

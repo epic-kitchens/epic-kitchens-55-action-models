@@ -4,13 +4,13 @@ channels:
   - pytorch
   - defaults
 dependencies:
-  - libjpeg-turbo=2.0.2
-  - cudatoolkit=9.0
-  - pip=19.1.1
-  - python=3.7.3
-  - numpy=1.16.4
-  - pytorch=1.1.0
-  - torchvision=0.3.0
+  - libjpeg-turbo=2.0.3
+  - cudatoolkit=10.2
+  - pip
+  - python=3.7
+  - numpy
+  - pytorch=1.5.0
+  - torchvision=0.6.0
   - pip:
     # The released version of pretrainedmodels has a bug around DataParallel and
     # pytorch 1.0, see the following links for details:
